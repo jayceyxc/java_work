@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="info" strict="true" name="JavaWork"
+               packages="com.bcdata.elk">
+    <Properties>
+        <Property name="filename">logs/java_work.log</Property>
+        <Property name="index_log_filename">logs/index.log</Property>
+    </Properties>
+    <Filter type="ThresholdFilter" level="info"/>
+
+    <Appenders>
+        <!--<Appender type="Console" name="STDOUT">-->
+            <!--<Layout type="PatternLayout" pattern="%m %X%n"/>-->
+            <!--<Filters>-->
+                <!--<Filter type="MarkerFilter" marker="FLOW" onMatch="DENY" onMismatch="NEUTRAL"/>-->
+                <!--<Filter type="MarkerFilter" marker="EXCEPTION" onMatch="DENY" onMismatch="ACCEPT"/>-->
+            <!--</Filters>-->
+        <!--</Appender>-->
+        <!--<Appender type="Console" name="FLOW">-->
+            <!--<Layout type="PatternLayout" pattern="%C{1}.%M %m %ex%n"/>&lt;!&ndash; class and line number &ndash;&gt;-->
+            <!--<Filters>-->
+                <!--<Filter type="MarkerFilter" marker="FLOW" onMatch="ACCEPT" onMismatch="NEUTRAL"/>-->
+                <!--<Filter type="MarkerFilter" marker="EXCEPTION" onMatch="ACCEPT" onMismatch="DENY"/>-->
+            <!--</Filters>-->
+        <!--</Appender>-->
+        <Appender type="Console" name="STDOUT">
+            <Layout type="PatternLayout" pattern="%m %n"/>
+            <!--<Filter type="ThresholdFilter" level="warn"/>-->
+        </Appender>
+        <RollingFile name="ClientFile" fileName="logs/java_work.log" filePattern="logs/java_work-%d{yyyy-MM-dd-HH}-%i.log.gz" immediateFlush="true">
+            <PatternLayout>
+                <Pattern>%d %p %C [%t] %m%n</Pattern>
+            </PatternLayout>
+            <Policies>
+                <!--<OnStartupTriggeringPolicy />-->
+                <SizeBasedTriggeringPolicy size="20 MB" />
+                <TimeBasedTriggeringPolicy />
+            </Policies>
+            <DefaultRolloverStrategy max="20"/>
+        </RollingFile>
+        <RollingFile name="IndexLogFile" fileName="logs/index_log.log" filePattern="logs/index_log-%d{yyyy-MM-dd-HH}-%i.log.gz">
+            <PatternLayout>
+                <Pattern>%d %p %C [%t] %m%n</Pattern>
+            </PatternLayout>
+            <Policies>
+                <!--<OnStartupTriggeringPolicy />-->
+                <SizeBasedTriggeringPolicy size="20 MB" />
+                <TimeBasedTriggeringPolicy />
+            </Policies>
+            <DefaultRolloverStrategy max="20"/>
+        </RollingFile>
+    </Appenders>
+
+    <Loggers>
+        <Logger name="com.bcdata.elk.ESClient" level="debug" additivity="false">
+            <AppenderRef ref="ClientFile"/>
+        </Logger>
+
+        <Root level="info">
+            <AppenderRef ref="STDOUT"/>
+        </Root>
+        <Logger name="com.bcdata.elk.IndexBidderLog" level="info" additivity="false">
+            <AppenderRef ref="IndexLogFile"/>
+        </Logger>
+
+    </Loggers>
+
+</Configuration>
