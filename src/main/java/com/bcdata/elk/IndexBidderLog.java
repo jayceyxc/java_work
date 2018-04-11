@@ -93,19 +93,22 @@ public class IndexBidderLog {
                     parseErrorNum++;
                     continue;
                 }
+
+                String logKey = tokens[LogIndex.LOG_KEY_INDEX.getValue ()];
+                String pushID = tokens[LogIndex.PUSH_ID_INDEX.getValue ()];
+
                 try {
                     String time = tokens[LogIndex.TIME_INDEX.getValue ()];
                     currLogTime = DateUtils.dateToTimeStamp (time, TIME_FORMAT);
                 } catch (IndexOutOfBoundsException ioobe) {
-                    log.error (ioobe);
+                    log.error ("error push id: " + pushID, ioobe);
                     parseErrorNum++;
                     continue;
                 }
-                String logKey = tokens[LogIndex.LOG_KEY_INDEX.getValue ()];
-                String pushID = tokens[LogIndex.PUSH_ID_INDEX.getValue ()];
+
                 if (logKey.equals ("rtb_creative")) {
                     if (tokens.length < 41) {
-                        log.info ("wrong creative log: " + line);
+                        log.error ("wrong creative log, push id: " + pushID);
                         parseErrorNum++;
                         continue;
                     }
@@ -134,8 +137,19 @@ public class IndexBidderLog {
                         String cityName = "";
                         String provinceName = "";
                         String net = "";
+                        double price = 0.0;
                         try {
                             net = getNetwork (tokens[LogIndex.NET_INDEX.getValue ()]);
+                            String priceString = tokens[LogIndex.PRICE_INDEX.getValue ()];
+                            if ((priceString != null) && !priceString.isEmpty ()) {
+                                try {
+                                    price = Double.valueOf (priceString);
+                                } catch (NumberFormatException nfe) {
+                                    log.error ("The price for " + pushID + " is not valid number", nfe);
+                                }
+                            } else {
+                                log.error ("use default price for push id: " + pushID + "original is " + priceString);
+                            }
                             String cityIDToken = tokens[LogIndex.CITY_INDEX.getValue ()];
                             if (!cityIDToken.isEmpty () && StringUtils.isNumeric (cityIDToken)) {
                                 cityID = Integer.valueOf (cityIDToken);
@@ -153,9 +167,8 @@ public class IndexBidderLog {
                                 provinceName = cityInfoMap.get (cityID).getProvinceName ();
                             }
                         } catch (IndexOutOfBoundsException ioobe) {
-                            log.error (ioobe);
+                            log.error ("error push id: " + pushID, ioobe);
                         }
-
                         AdDetail adDetail = new AdDetail ();
                         adDetail.setUid (userID);
                         adDetail.setIp (ip);
@@ -175,7 +188,7 @@ public class IndexBidderLog {
                         adDetail.setAgent (userAgent);
                         adDetail.setBidder (tokens[LogIndex.BIDDER_INDEX.getValue ()]);
                         adDetail.setPushid (pushID);
-                        adDetail.setPrice (Double.valueOf (tokens[LogIndex.PRICE_INDEX.getValue ()]));
+                        adDetail.setPrice (price);
                         showDetails.put (pushID, adDetail);
                         log.debug (adDetail);
                         log.debug ("add to show details: " + pushID);
@@ -253,7 +266,7 @@ public class IndexBidderLog {
 
         ExecutorService executorService = Executors.newFixedThreadPool (2);
         Future<Integer> timerResult = executorService.submit (new TimerCallable (60));
-        Future<Integer> flushResult = executorService.submit (new FlushCallable (esHost, esPort, 30));
+        Future<Integer> flushResult = executorService.submit (new FlushCallable (esHost, esPort));
         executorService.shutdown ();
 
         directory = StringUtils.stripEnd (directory, File.separator);
@@ -357,14 +370,12 @@ public class IndexBidderLog {
 
         private TransportClient client;
         private String name;
-        private int interval;
         private int bulkNumber = 0;
         private String host;
         private int port;
 
-        private FlushCallable (String host, int port, int interval) {
+        private FlushCallable (String host, int port) {
             this.name = "Flush Thread";
-            this.interval = interval;
             this.host = host;
             this.port = port;
             initESClient ();
@@ -400,9 +411,6 @@ public class IndexBidderLog {
                             ObjectMapper mapper = new ObjectMapper ();
                             try {
                                 String value = mapper.writeValueAsString (adDetail);
-                                /**
-                                 * {"uid":"047202596629","adID":10850,"ip":"1.28.255.45","campaignID":-1,"policyID":-1,"cityID":13923089,"cityName":"","provinceName":"","spName":"301","network":"Unknown","time":"2018-03-30 08:03:00.000+0700","timeVal":1522369096,"domain":"coohua.com","host":"www.coohua.com","url":"www.coohua.com","userAgent":"Mozilla/5.0 (Linux; Android 4.4.4; A31 Build/KTU84P; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/57.0.2987.132 MQQBrowser/6.2 TBS/043909 Mobile Safari/537.36","processHost":"localhost.localdomain","pushID":"b450c90e853a41c9e84ec6bd148c7693","lacci":null,"hasShow":true,"hasClick":true,"price":5.0}
-                                 */
                                 logger.debug ("value: " + value);
                                 bulkRequest.add (client.prepareIndex (BIDDER_INDEX, docType).setSource (value, XContentType.JSON));
                                 bulkNumber++;
