@@ -32,6 +32,7 @@ public class IniReader {
 
 	public static final String ES_SECTION = "es";
     public static final String MYSQL_SECTION = "mysql";
+    public static final String SYSTEM_SECTION = "system";
 
     public static final String ES_HOST_PROP = "es_host";
     public static final String ES_PORT_PROP = "es_port";
@@ -44,6 +45,8 @@ public class IniReader {
     public static final String MYSQL_PASSWORD_PROP = "mysql_password";
     public static final String MYSQL_RMC_DB_PROP = "mysql_rmc_db";
     public static final String MYSQL_AD_DB_PROP = "mysql_ad_db";
+
+    public static final String SYSTEM_TIME_FORMAT_PROP = "time_format";
 
 
 	private IniReader (String filename) throws IOException {

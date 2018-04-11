@@ -32,7 +32,7 @@ public class IndexBidderLog {
     private static final String SEPARATOR = "\u0001";
 
     private static final String TIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
-    private static final String ES_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'+0700";
+    private static String ES_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS+0800";
 
     private static int parseErrorNum = 0;
     private static int pushidDupNum = 0;
@@ -99,7 +99,7 @@ public class IndexBidderLog {
                 } catch (IndexOutOfBoundsException ioobe) {
                     log.error (ioobe);
                     parseErrorNum++;
-                    return;
+                    continue;
                 }
                 String logKey = tokens[LogIndex.LOG_KEY_INDEX.getValue ()];
                 String pushID = tokens[LogIndex.PUSH_ID_INDEX.getValue ()];
@@ -107,7 +107,7 @@ public class IndexBidderLog {
                     if (tokens.length < 40) {
                         log.info ("wrong creative log: " + line);
                         parseErrorNum++;
-                        return;
+                        continue;
                     }
 
                     String userID = tokens[LogIndex.USER_INDEX.getValue ()];
@@ -237,6 +237,12 @@ public class IndexBidderLog {
 
         String esHost = config.getValue (IniReader.ES_SECTION, IniReader.ES_HOST_PROP);
         int esPort = config.getIntValue (IniReader.ES_SECTION, IniReader.ES_PORT_PROP);
+
+        String customTimeFormat = config.getValue (IniReader.SYSTEM_SECTION, IniReader.SYSTEM_TIME_FORMAT_PROP);
+        if (!customTimeFormat.isEmpty ()) {
+            log.info ("Use custom time format: " + customTimeFormat);
+            ES_TIME_FORMAT = customTimeFormat;
+        }
 
         adInfoMap = DBUtils.queryAdInfo (mysqlHost, mysqlPort, mysqlUser, mysqlPassword, adDBName);
         cityInfoMap = DBUtils.queryCityInfo (mysqlHost, mysqlPort, mysqlUser, mysqlPassword, rmcDBName);
@@ -401,7 +407,7 @@ public class IndexBidderLog {
                                 logger.error (adDetail.getPushid (), jpe);
                             }
                         }
-                        if ((bulkNumber == 1000) || (parseFinished)) {
+                        if ((bulkNumber == 1000) || (parseFinished && flushQueue.isEmpty ())) {
                             BulkResponse bulkResponse = bulkRequest.get ();
                             if (bulkResponse.hasFailures ()) {
                                 logger.error (bulkResponse.buildFailureMessage ());
