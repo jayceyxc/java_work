@@ -104,7 +104,7 @@ public class IndexBidderLog {
                 String logKey = tokens[LogIndex.LOG_KEY_INDEX.getValue ()];
                 String pushID = tokens[LogIndex.PUSH_ID_INDEX.getValue ()];
                 if (logKey.equals ("rtb_creative")) {
-                    if (tokens.length < 40) {
+                    if (tokens.length < 41) {
                         log.info ("wrong creative log: " + line);
                         parseErrorNum++;
                         continue;
@@ -133,8 +133,9 @@ public class IndexBidderLog {
                         int policyID = -1;
                         String cityName = "";
                         String provinceName = "";
-                        String net = getNetwork (tokens[LogIndex.NET_INDEX.getValue ()]);
+                        String net = "";
                         try {
+                            net = getNetwork (tokens[LogIndex.NET_INDEX.getValue ()]);
                             String cityIDToken = tokens[LogIndex.CITY_INDEX.getValue ()];
                             if (!cityIDToken.isEmpty () && StringUtils.isNumeric (cityIDToken)) {
                                 cityID = Integer.valueOf (cityIDToken);
@@ -280,6 +281,7 @@ public class IndexBidderLog {
         }
 
         parseFinished = true;
+        log.warn ("parse log finished");
 
         while (true) {
             try {
