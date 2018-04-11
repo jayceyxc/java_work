@@ -280,8 +280,6 @@ public class IndexBidderLog {
         }
 
         parseFinished = true;
-        log.warn (String.format ("parse_error_num: %d, bulk_failed_num: %d, push_id_dup_num: %d, user_id_null_num: %d",
-                parseErrorNum, bulkFailedNum, pushidDupNum, userIDNullNum));
 
         while (true) {
             try {
@@ -302,6 +300,9 @@ public class IndexBidderLog {
                 log.error (ee);
             }
         }
+
+        log.warn (String.format ("parse_error_num: %d, bulk_failed_num: %d, push_id_dup_num: %d, user_id_null_num: %d",
+                parseErrorNum, bulkFailedNum, pushidDupNum, userIDNullNum));
     }
 
     private static class TimerCallable implements Callable<Integer> {
